@@ -10,36 +10,82 @@ Appear to have been aligned using bwamem in ALT-aware mode to GRCh38/hg38
 [How can I tell if a BAM was aligned with alt-handling?](https://gatk.broadinstitute.org/hc/en-us/articles/360037498992#3.1)
 
 
+## create a clean environment
+
+Always begin with a controlled environment for best case reproducibility of steps:
+
+[conda](conda.io) is installed in the cavatica environment - the platform for the INCLUDE project. Direct login [cavatica.sbgenomics.com](cavatica.sbgenomics.com)
+
+```bash
+conda create -n picard -y
+```
+
+## Install a few tools
+
+Install things to make work with - any packages and detailed instructions may be found on the [anaconda repository site](https://anaconda.org/anaconda/repo)
+
+Install samtools
+```bash
+conda install -c bioconda -y
+```
+
+Install emacs
+```bash
+conda install -c conda-forge emacs -y
+```
+
 ## Inspect the head of the file
 
-```bash
-samtools view -H HTP0003A.cram | head
-```
-
-## Inspect the SAM/BAM
-
-Reference [samtools](https://github.com/samtools/samtools#readme) and Peter Robinson's [Computational Exome and Genome Analysis - Chapter 9](https://www.amazon.com/Computational-Analysis-Chapman-Mathematical-Biology/dp/1498775985)
+Assuming the files are attached to the project - the files may be listed here:
 
 ```bash
-samtools view -H HTP0003A.cram | grep "@SQ" | head
+ls -l /sbgenomics/project-files/
+(picard) jovyan@570e064c3ef6:/sbgenomics/workspace$ ls -l /sbgenomics/project-files/total 666
+-rw-r--r-- 1 1005 1002  91581 Nov 19 23:50 1KG_MHC_Alts_Decoys.bed
+drwxr-xr-x 1 1005 1002   4096 Apr 21 17:31 HTP_CRAMs
+-rw-r--r-- 1 1005 1002      0 Nov 18 18:34 output_test.txt
+drwxr-xr-x 1 1005 1002   4096 Apr 21 17:31 References
+-rw-r--r-- 1 1005 1002 581741 Nov 19 23:51 test2.interval_list
+```
+
+The samtools conda install fails!
+
+Downloaded and configured samtools myself -- think I will dockerize and containerize the thing!
+
+```bash
+wget https://github.com/samtools/samtools/releases/download/1.15.1/samtools-1.15.1.tar.bz2
+bzip2 -d samtools-1.15.1.tar.bz2
+tar xvf samtools-1.15.1.tar
+cd samtools-1.15.1
+cd /sbgenomics/workspace/samtools-1.15.1
+./configure
+./configure --without-curses
+./configure --without-curses --disable-lzma
+```
+
+
+```bash
+samtools view -H /sbgenomics/project-files/HTP_CRAMs/HTP0003A.cram
 ```
 
 ```bash
-samtools view -H HTP0003A.cram | grep "@SQ" | wc -l
+samtools view -H /sbgenomics/project-files/HTP_CRAMs/HTP0003A.cram | grep "@SQ" | wc -l
+3366
 ```
 
+```bash
+samtools view -H /sbgenomics/project-files/HTP_CRAMs/HTP0003A.cram | grep "@SQ" | grep "HLA" | head
+```
 
-Including ~525 alternate contigs for HLA regions
-samtools view -H HTP0003A.cram | grep "@SQ" | grep "HLA" | head
+```bash
+samtools view -H /sbgenomics/project-files/HTP_CRAMs/HTP0003A.cram | grep "@SQ" | grep "HLA" | wc -l
+```
 
-
-samtools view -H HTP0003A.cram | grep "@SQ" | grep "HLA" | wc -l
-
-
-
+## Extract based upon a bed file?
 
 Can extract specific regions from sam/bam/cram files using samtools view and a bed file:
 samtools view -L test.bed HTP0003A.cram
+
 However, without providing a reference via -T or –reference, it appears to try and download/cache the file(s) from http://www.ebi.ac.uk/ena/cram/md5/%s and is either very slow or can hang
 
 
@@ -47,10 +93,16 @@ How to get the appropriate reference file(s)?
 GATK Resource Bundle https://gatk.broadinstitute.org/hc/en-us/articles/360035890811-Resource-bundle.%C2%A0
 Files stored on Google Cloud:
 https://console.cloud.google.com/storage/browser/genomics-public-data/resources/broad/hg38/v0;tab=objects?pli=1&prefix=&forceOnObjectsSortingFiltering=false
-gsutil cp gs://genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.fasta ./
 
-head Homo_sapiens_assembly38.fasta
+If you need it you can get it with:
 
+```bash
+wget gs://genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.fasta 
+```
+
+```bash
+head /sbgenomics/project-files/References/Homo_sapiens_assembly38.fasta
+```
 
 cat Homo_sapiens_assembly38.fasta | grep ">" | head
 
@@ -126,44 +178,52 @@ java -Xmx2g -jar picard.jar FilterSamReads \
 					      		     SORT_ORDER=queryname
 
 Need to convert BED file to Picard INTERVAL_LIST format ie 0-based vs 1-based + header
+
 BedToIntervalList (requires a sequence dictionary + reference for CRAMs undocumented)
+
+```bash
 picard BedToIntervalList \
       I=test2.bed \
-            O=test2.interval_list \
-	          SD=~/References/Homo_sapiens_assembly38.dict
-		  picard FilterSamReads \
-		      REFERENCE_SEQUENCE=~/References/Homo_sapiens_assembly38.fasta \
-		          INPUT=HTP0003A.cram \
-			      OUTPUT=HTP0003A_test2.cram \
-			          FILTER=includePairedIntervals \
-				      INTERVAL_LIST=test2.interval_list \
-				          SORT_ORDER=queryname
-					  (complains about coordinate sorting although CRAM header list SO:coordinate)
+      O=test2.interval_list \
+      SD=~/References/Homo_sapiens_assembly38.dict
+      picard FilterSamReads \
+      REFERENCE_SEQUENCE=~/References/Homo_sapiens_assembly38.fasta \
+      INPUT=HTP0003A.cram \
+      OUTPUT=HTP0003A_test2.cram \
+      FILTER=includePairedIntervals \
+      INTERVAL_LIST=test2.interval_list \
+      SORT_ORDER=queryname
+```
+(complains about coordinate sorting although CRAM header list SO:coordinate)
 
+```bash
 picard ValidateSamFile I=HTP0003A.cram MODE=SUMMARY REFERENCE_SEQUENCE=~/References/Homo_sapiens_assembly38.fasta
-
+```
 
 https://gatk.broadinstitute.org/hc/en-us/articles/360035891231-Errors-in-SAM-or-BAM-files-can-be-diagnosed-with-ValidateSamFile
 
 
-
 Seems fine but will try re-sorting:
+```bash
 picard SortSam \
       I=HTP0003A.cram \
-            O=HTP0003A_resorted.cram \
-	          SORT_ORDER=coordinate \
-		        REFERENCE_SEQUENCE=~/References/Homo_sapiens_assembly38.fasta \
-			      CREATE_INDEX=TRUE
-			      Takes ~5+ hrs on Macbook:
+      O=HTP0003A_resorted.cram \
+      SORT_ORDER=coordinate \
+      REFERENCE_SEQUENCE=~/References/Homo_sapiens_assembly38.fasta \
+      CREATE_INDEX=TRUE
+```
+Takes ~5+ hrs on Macbook:
 
-
+```bash
 picard FilterSamReads \
     REFERENCE_SEQUENCE=~/References/Homo_sapiens_assembly38.fasta \
-        INPUT=HTP0003A_resorted.cram \
-	    OUTPUT=HTP0003A_test2.cram \
-	        FILTER=includePairedIntervals \
-		    INTERVAL_LIST=test2.interval_list \
-		        SORT_ORDER=queryname
+    INPUT=HTP0003A_resorted.cram \
+    OUTPUT=HTP0003A_test2.cram \
+    FILTER=includePairedIntervals \
+    INTERVAL_LIST=test2.interval_list \
+    SORT_ORDER=queryname
+```
+
 			Still complains about sorting!!
 
 
@@ -178,9 +238,8 @@ Confirmed to work without SORT_ORDER=queryname
 Filed a bug with Picard on Github:
 https://github.com/broadinstitute/picard/issues/1734
 
-
-
 # RUNNING ON CAVATICA
+
 Some tools available under “Public Apps”
 Although Picard version here is old + app task GUI does not expose all command line params.
 Public Apps > Search for tool>run app>copy to Project>creates task
@@ -190,3 +249,5 @@ Can install packages with Conda (gets wiped every time though)
 
 Read Project files from: /sbgenomics/project-files/ (=read only)
 Write files to: /sbgenomics/output-files/
+
+
