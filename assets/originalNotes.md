@@ -24,11 +24,6 @@ conda create -n picard -y
 
 Install things to make work with - any packages and detailed instructions may be found on the [anaconda repository site](https://anaconda.org/anaconda/repo)
 
-Install samtools
-```bash
-conda install -c bioconda -y
-```
-
 Install emacs
 ```bash
 conda install -c conda-forge emacs -y
@@ -48,9 +43,7 @@ drwxr-xr-x 1 1005 1002   4096 Apr 21 17:31 References
 -rw-r--r-- 1 1005 1002 581741 Nov 19 23:51 test2.interval_list
 ```
 
-The samtools conda install fails!
-
-Downloaded and configured samtools myself -- think I will dockerize and containerize the thing!
+Downloaded and configured samtools -- think I will dockerize and containerize the thing!
 
 ```bash
 wget https://github.com/samtools/samtools/releases/download/1.15.1/samtools-1.15.1.tar.bz2
@@ -84,13 +77,17 @@ samtools view -H /sbgenomics/project-files/HTP_CRAMs/HTP0003A.cram | grep "@SQ" 
 ## Extract based upon a bed file?
 
 Can extract specific regions from sam/bam/cram files using samtools view and a bed file:
+
+```bash
 samtools view -L test.bed HTP0003A.cram
+```
 
 However, without providing a reference via -T or –reference, it appears to try and download/cache the file(s) from http://www.ebi.ac.uk/ena/cram/md5/%s and is either very slow or can hang
 
 
 How to get the appropriate reference file(s)?
 GATK Resource Bundle https://gatk.broadinstitute.org/hc/en-us/articles/360035890811-Resource-bundle.%C2%A0
+
 Files stored on Google Cloud:
 https://console.cloud.google.com/storage/browser/genomics-public-data/resources/broad/hg38/v0;tab=objects?pli=1&prefix=&forceOnObjectsSortingFiltering=false
 
@@ -104,55 +101,82 @@ wget gs://genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.f
 head /sbgenomics/project-files/References/Homo_sapiens_assembly38.fasta
 ```
 
+```bash
 cat Homo_sapiens_assembly38.fasta | grep ">" | head
+```
 
-
+```bash
 cat Homo_sapiens_assembly38.fasta | grep ">" | wc -l
+```
 
-
+```bash
 cat Homo_sapiens_assembly38.fasta | grep ">" | grep "HLA" | head
+```
 
-
+```bash
 cat Homo_sapiens_assembly38.fasta | grep ">" | grep "HLA" | wc -l
-
+```
 
 Extracting reads aligned to specific regions from CRAMs
 cat test.bed
 
-
+```bash
 samtools view -h --threads=3 -L test.bed -T ~/References/Homo_sapiens_assembly38.fasta HTP0003A.cram > test.out
-
+```
 (-h return output with header, required for samtools fastq)
 (--threads=3 allows for 3 additional threads to be used; exact parameter name depends on samtools version; online docs for v1.13 lists –nthreads and does not work but man page lists --threads)
 
+```bash
 wc -l test.out
+```
 
-
+```bash
 wc -l test2.bed
+```
 
+```bash
 wc -l test2.out # this includes header lines
+```
 
+```bash
 cat test2.out | samtools view | wc -l
+```
 
+```bash
 cat test2.out | samtools view -f 1 | wc -l # read paired
+```
 
+```bash
 cat test2.out | samtools view -f 4 | wc -l # unmapped
+```
 
+```bash
 cat test2.out | samtools view -f 9 | wc -l # paired, mate unmapped
-
+```
 
 To convert paired-end to fastq, need to pass through collate:
+
+```bash
 cat test2.out | samtools collate -u -O - | samtools fastq -1 test2_paired_R1.fastq -2 test2_paired_R2.fastq -0 /dev/null -s test2_singletons.fastq -n
+```
 
-
+```bash
 wc -l test2_paired_R1.fastq
+```
+
 3148312 / 4 = 787078
 
+```bash
 wc -l test2_paired_R2.fastq
+```
+
 3148312 / 4 = 787078
 
 sum = 1574156
+
+```bash
 wc -l test2_singletons.fastq
+```
 
 79552 / 4 = 19888
 
@@ -160,7 +184,9 @@ sum 1574156 + 19888 = 1594044 != 1599436 reported as paired by view above!
 
 These numbers do not add up – all reads are paired in the starting output = problem with collate?
 
+```bash
 cat test2.out | samtools sort -n -O sam - | samtools fastq -1 test3_paired_R1.fastq -2 test3_paired_R2.fastq -0 /dev/null -s test3_singletons.fastq -n
+```
 
 same problem
 contains reads with paired flag set but names that do not match
@@ -200,8 +226,7 @@ picard FilterSamReads \
       INPUT=/sbgenomics/project-files/HTP_CRAMs/HTP0003A.cram \
       OUTPUT=/sbgenomics/project-files/HTP_CRAMs/HTP0003A_picard_test2.cram \
       FILTER=includePairedIntervals \
-      INTERVAL_LIST=test2.interval_list \
-      SORT_ORDER=queryname
+      INTERVAL_LIST=test2.interval_list
 ```
 (complains about coordinate sorting although CRAM header list SO:coordinate)
 
