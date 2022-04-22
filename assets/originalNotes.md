@@ -189,11 +189,14 @@ BedToIntervalList (requires a sequence dictionary + reference for CRAMs undocume
 
 ```bash
 picard BedToIntervalList \
-      I=1KG_MHC_Alts_Decoys.bed \
-      O=1KG_MHC_Alts_Decoys.interval_list \
+      I=/sbgenomics/project-files/1KG_MHC_Alts_Decoys.bed \
+      O=/sbgenomics/project-files/1KG_MHC_Alts_Decoys.interval_list \
       SD=/sbgenomics/project-files/References/Homo_sapiens_assembly38.dict
-      picard FilterSamReads \
-      REFERENCE_SEQUENCE=~/References/Homo_sapiens_assembly38.fasta \
+```
+
+```bash
+picard FilterSamReads \
+      REFERENCE_SEQUENCE=/sbgenomics/project-files/References/Homo_sapiens_assembly38.fasta \
       INPUT=/sbgenomics/project-files/HTP_CRAMs/HTP0003A.cram \
       OUTPUT=/sbgenomics/project-files/HTP_CRAMs/HTP0003A_picard_test2.cram \
       FILTER=includePairedIntervals \
@@ -225,8 +228,8 @@ Takes ~5+ hrs on Macbook:
 ```bash
 picard FilterSamReads \
     REFERENCE_SEQUENCE=/sbgenomics/project-files/References/Homo_sapiens_assembly38.fasta \
-    INPUT=HTP0003A_resorted.cram \
-    OUTPUT=HTP0003A_test2.cram \
+    INPUT=/sbgenomics/project-files/HTP_CRAMs/HTP0003A_resorted.cram \
+    OUTPUT=/sbgenomics/project-files/HTP_CRAMs/HTP0003A_test2.cram \
     FILTER=includePairedIntervals \
     INTERVAL_LIST=test2.interval_list \
     SORT_ORDER=queryname
@@ -242,6 +245,14 @@ Although manual clearly states this is for the output:
 
 Confirmed to work without SORT_ORDER=queryname
 
+```bash
+picard FilterSamReads \
+    REFERENCE_SEQUENCE=/sbgenomics/project-files/References/Homo_sapiens_assembly38.fasta \
+    INPUT=/sbgenomics/project-files/HTP_CRAMs/HTP0003A_resorted.cram \
+    OUTPUT=/sbgenomics/project-files/HTP_CRAMs/HTP0003A_test2.cram \
+    FILTER=includePairedIntervals \
+    INTERVAL_LIST=test2.interval_list
+```
 
 Filed a bug with Picard on Github:
 https://github.com/broadinstitute/picard/issues/1734
