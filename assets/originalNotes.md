@@ -260,9 +260,6 @@ picard FilterSamReads \
     SORT_ORDER=queryname
 ```
 
-			Still complains about sorting!!
-
-
 
 Looks like it may work if SORT_ORDER=queryname is removed (but will have to collate before conversion to fastq)
 Although manual clearly states this is for the output:
@@ -281,6 +278,13 @@ picard FilterSamReads \
 
 Filed a bug with Picard on Github:
 https://github.com/broadinstitute/picard/issues/1734
+
+# Final Command
+
+```bash
+picard FilterSamReads REFERENCE_SEQUENCE=/sbgenomics/project-files/References/Homo_sapiens_assembly38.fasta INPUT=/sbgenomics/project-files/HTP_CRAMs/HTP0003A.cram OUTPUT=HTP0003A_picard_test2.cram FILTER=includePairedIntervals INTERVAL_LIST=/sbgenomics/project-files/test2.interval_list MAX_RECORDS_IN_RAM=10000000
+```
+
 
 # RUNNING ON CAVATICA
 
