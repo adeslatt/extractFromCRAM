@@ -282,7 +282,13 @@ https://github.com/broadinstitute/picard/issues/1734
 # Final Command
 
 ```bash
-picard FilterSamReads REFERENCE_SEQUENCE=/sbgenomics/project-files/References/Homo_sapiens_assembly38.fasta INPUT=/sbgenomics/project-files/HTP_CRAMs/HTP0003A.cram OUTPUT=HTP0003A_picard_test2.cram FILTER=includePairedIntervals INTERVAL_LIST=/sbgenomics/project-files/test2.interval_list MAX_RECORDS_IN_RAM=10000000
+picard FilterSamReads \
+    REFERENCE_SEQUENCE=/sbgenomics/project-files/References/Homo_sapiens_assembly38.fasta \
+    INPUT=/sbgenomics/project-files/HTP_CRAMs/HTP0003A.cram \
+    OUTPUT=HTP0003A_picard_test2.cram \
+    FILTER=includePairedIntervals \
+    INTERVAL_LIST=/sbgenomics/project-files/test2.interval_list \
+    MAX_RECORDS_IN_RAM=10000000
 ```
 
 
